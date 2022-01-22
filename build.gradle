@@ -1,0 +1,54 @@
+import java.nio.file.Files
+
+plugins {
+    id 'java'
+}
+
+group 'me.itzg'
+version '1.0.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+abstract class ClassToBase64Task extends DefaultTask {
+    @OutputDirectory
+    final abstract DirectoryProperty outputDir =
+            project.objects.directoryProperty().convention(project.layout.buildDirectory.dir("classesAsText"))
+
+    @InputDirectory
+    final abstract DirectoryProperty inputDir = project.objects.directoryProperty()
+
+    @TaskAction
+    def convert() {
+        inputDir.get().asFileTree
+                .matching { include '*.class' }
+                .visit {
+                    var outRelPath = it.relativePath.replaceLastName(
+                            it.relativePath.lastName.takeBefore('.class') + '.b64'
+                    )
+                    var fileInOutDir = outputDir.get().file(outRelPath.pathString)
+
+                    Files.write(fileInOutDir.asFile.toPath(),
+                            Base64.encoder.encode(
+                                    Files.readAllBytes(it.file.toPath())
+                            )
+                    )
+                    logger.info("Created ${fileInOutDir}")
+                }
+    }
+}
+
+tasks.register('textEncodeClasses', ClassToBase64Task) {
+    inputDir = tasks.named('compileJava')
+            .flatMap { it.destinationDirectory }
+}
