@@ -8,8 +8,8 @@
 
 The base64 encoded version of GetTgz is located in `build/classesAsText`
 
-You can then reconstitute the java class file on a remote system by `echo`ing the contents of the b64 file:
+You can then reconstitute the java class file on a remote system by `echo`ing the contents of the b64 file via base64 decoding and un-gzipping:
 
 ```shell
-echo "..." | base64 -d > GetTgz.class
+echo "...contents of b64 file..."  | base64 -d | gzip -d > GetTgz.class
 ```
